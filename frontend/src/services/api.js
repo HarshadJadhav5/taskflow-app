@@ -1,6 +1,7 @@
-import axios from 'axios'
+import axios from 'axios';
 
-const API_URL = 'http://localhost:8000'
+// Base URL of FastAPI backend
+const API_URL = 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({
@@ -20,19 +21,32 @@ api.interceptors.request.use((config) => {
 });
 
 
-export const register = async (userData) => {
-    const response = await axios.post('/register', userData)
-    return response.data
-}
 
-export const login = async(credentials) => {
-    const response = await axios.post('/login', credentials)
-    if (response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token)
-        localStorage.setItem('user', JSON.stringify(response.data.user))
-    }
-    return response.data
-}
+// Auth functions
+
+export const register = async (userData) => {
+  const response = await api.post('/register', userData);
+  return response.data;
+};
+
+export const login = async (credentials) => {
+  // OAuth2PasswordRequestForm expects form data, not JSON
+  const formData = new URLSearchParams();
+  formData.append('username', credentials.email); // OAuth2 calls it 'username' but we send email
+  formData.append('password', credentials.password);
+  
+  const response = await api.post('/login', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+  
+  if (response.data.access_token) {
+    localStorage.setItem('token', response.data.access_token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+  }
+  return response.data;
+};
 
 export const logout = () => {
   localStorage.removeItem('token');
@@ -45,9 +59,7 @@ export const getCurrentUser = () => {
 };
 
 
-// ──────────────────────────────────────────────
-// TASK FUNCTIONS
-// ──────────────────────────────────────────────
+// these are the task functins
 
 export const getTasks = async (filters = {}) => {
   const params = new URLSearchParams();
